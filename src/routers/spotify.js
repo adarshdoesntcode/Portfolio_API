@@ -33,6 +33,7 @@ spotifyRouter.get("/spotify/get-player-state", async (req, res) => {
           artists: data.item.artists.map((artist) => artist.name),
           trackLink: data.item.external_urls.spotify,
           isPlaying: true,
+          trackAudio: data.item.preview_url,
           status: 200,
         });
       }
@@ -60,6 +61,7 @@ spotifyRouter.get("/spotify/recently-played", async (req, res) => {
       trackTitle: recentTrack.name,
       artists: recentTrack.artists.map((artist) => artist.name),
       trackLink: recentTrack.external_urls.spotify,
+      trackAudio: recentTrack.preview_url,
       isPlaying: false,
       status: 200,
     });
