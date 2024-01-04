@@ -2,8 +2,6 @@ const express = require("express");
 const request = require("request");
 const spotifyRouter = new express.Router();
 
-// -----------------CREATE TASK----------------
-
 spotifyRouter.get("/spotify/get-player-state", async (req, res) => {
   try {
     const response = await fetch(
@@ -27,7 +25,17 @@ spotifyRouter.get("/spotify/get-player-state", async (req, res) => {
 
     if (response.status !== 401 && response.status !== 204) {
       const data = await response.json();
-      res.status(200).send(data);
+      if (data.currently_playing_type === "episode") {
+        res.redirect("/spotify/recently-played");
+      } else {
+        res.status(200).send({
+          trackTitle: data.item.name,
+          artists: data.item.artists.map((artist) => artist.name),
+          trackLink: data.item.external_urls.spotify,
+          isPlaying: true,
+          status: 200,
+        });
+      }
     }
   } catch (e) {
     console.log(e);
@@ -47,7 +55,14 @@ spotifyRouter.get("/spotify/recently-played", async (req, res) => {
       }
     );
     const data = await response.json();
-    res.status(200).send(data);
+    const recentTrack = data.items[0].track;
+    res.status(200).json({
+      trackTitle: recentTrack.name,
+      artists: recentTrack.artists.map((artist) => artist.name),
+      trackLink: recentTrack.external_urls.spotify,
+      isPlaying: false,
+      status: 200,
+    });
   } catch (error) {
     console.log(error);
   }
