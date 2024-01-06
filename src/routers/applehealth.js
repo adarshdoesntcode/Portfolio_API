@@ -14,9 +14,7 @@ healthRouter.get("/health/steps", (req, res) => {
     "https://adarshportfolio.cyclic.app/steps"
   );
 
-  const scopes = [
-    "https://www.googleapis.com/auth/fitness.activity.read profile email openid",
-  ];
+  const scopes = ["https://www.googleapis.com/auth/fitness.activity.read"];
 
   const url = oauth2Client.generateAuthUrl({
     access_type: "offline",
