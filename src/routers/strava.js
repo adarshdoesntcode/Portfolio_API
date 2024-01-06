@@ -37,18 +37,14 @@ stravaRouter.get("/strava/get-activities", async (req, res) => {
 });
 
 stravaRouter.get("/strava/refresh-token", async (req, res) => {
-  console.log("refreshing strava token");
   try {
-    const response = await fetch(`https://www.strava.com/api/v3/oauth/token`, {
-      method: "POST",
-      body: {
-        client_secret: process.env.STRAVA_CLIENT_SECRET,
-        client_id: process.env.STRAVA_CLIENT_ID,
-        grant_type: "refresh_token",
-        refresh_token: process.env.STRAVA_REFRESH_TOKEN,
+    const response = await fetch("https://www.strava.com/api/v3/oauth/token", {
+      body: `client_id=${process.env.STRAVA_CLIENT_ID}&client_secret=${process.env.STRAVA_CLIENT_SECRET}&grant_type=refresh_token&refresh_token=${process.env.STRAVA_REFRESH_TOKEN}`,
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
       },
+      method: "POST",
     });
-
     const data = await response.json();
 
     process.env.STRAVA_REFRESH_TOKEN = data.refresh_token;
