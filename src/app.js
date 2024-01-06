@@ -8,6 +8,7 @@ var bodyParser = require("body-parser");
 const spotifyRouter = require("./routers/spotify");
 const healthRouter = require("./routers/applehealth");
 const notionRouter = require("./routers/notion");
+const stravaRouter = require("./routers/strava");
 
 require("./db/mongoose");
 
@@ -20,5 +21,6 @@ app.use(bodyParser.json());
 app.use(spotifyRouter);
 app.use(healthRouter);
 app.use(notionRouter);
+app.use(stravaRouter);
 
 module.exports = app;
