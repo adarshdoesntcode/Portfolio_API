@@ -13,7 +13,11 @@ const stravaRouter = require("./routers/strava");
 require("./db/mongoose");
 
 const app = express();
-app.use(cors());
+app.use(
+  cors({
+    origin: "*",
+  })
+);
 app.use(bodyParser.urlencoded({ extended: false }));
 
 // parse application/json
