@@ -24,9 +24,9 @@ stravaRouter.get("/strava/get-activities", async (req, res) => {
 
       res.status(200).json({
         distance: data[0].distance,
+        calories: data[0].calories,
         moving_time: data[0].moving_time,
         type: data[0].type,
-        kilojoules: data[0].kilojoules,
         average_speed: data[0].average_speed,
         max_speed: data[0].max_speed,
         start_date_local: data[0].start_date_local,
