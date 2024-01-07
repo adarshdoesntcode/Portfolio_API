@@ -1,5 +1,6 @@
 const express = require("express");
 const request = require("request");
+
 const stravaRouter = new express.Router();
 
 stravaRouter.get("/strava/get-activities", async (req, res) => {
