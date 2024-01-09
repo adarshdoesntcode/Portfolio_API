@@ -91,7 +91,9 @@ spotifyRouter.get("/spotify/recently-played", async (req, res) => {
 spotifyRouter.get("/spotify/refresh-token", function (req, res) {
   console.log("refreshing token routee");
 
-  console.log(req.headers);
+  console.log(req.headers["user-agent"]);
+  console.log(req.headers["accept"]);
+
   const authOptions = {
     url: "https://accounts.spotify.com/api/token",
     headers: {
@@ -114,50 +116,13 @@ spotifyRouter.get("/spotify/refresh-token", function (req, res) {
     if (!error && response.statusCode === 200) {
       process.env.ACCESS_TOKEN = body.access_token;
       await client.set("SPOTIFY_ACCESS_TOKEN", body.access_token);
-
-      // process.env.REFRESH_TOKEN = body.refresh_token;
-
-      // console.log("token after refresh token route", process.env.ACCESS_TOKEN);
-      // setTimeout(refreshToken, body.expires_in * 1000);
-
-      res.redirect("/spotify/get-player-state");
+      if (req.headers["x-cyclic"] !== "cron") {
+        res.redirect("/spotify/get-player-state");
+      } else {
+        res.status(200);
+      }
     }
   });
 });
-
-// refreshToken();
-
-function refreshToken() {
-  console.log("refreshing token");
-  const authOptions = {
-    url: "https://accounts.spotify.com/api/token",
-    headers: {
-      method: "POST",
-      "content-type": "application/x-www-form-urlencoded",
-      Authorization:
-        "Basic " +
-        new Buffer.from(
-          process.env.CLIENT_ID + ":" + process.env.CLIENT_SECRET_ID
-        ).toString("base64"),
-    },
-    form: {
-      grant_type: "refresh_token",
-      refresh_token: process.env.REFRESH_TOKEN,
-    },
-    json: true,
-  };
-
-  request.post(authOptions, async function (error, response, body) {
-    if (!error && response.statusCode === 200) {
-      console.log("refresh token body response ", body);
-      process.env.ACCESS_TOKEN = body.access_token;
-      await client.set("SPOTIFY_ACCESS_TOKEN", body.access_token);
-      // process.env.REFRESH_TOKEN = body.refresh_token;
-    }
-
-    // setTimeout(refreshToken, body.expires_in * 1000);
-    console.log("new access", process.env.ACCESS_TOKEN);
-  });
-}
 
 module.exports = spotifyRouter;
