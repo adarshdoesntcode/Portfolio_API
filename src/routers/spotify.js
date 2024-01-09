@@ -131,6 +131,8 @@ function updateToken() {
       process.env.REFRESH_TOKEN = body.refresh_token;
     }
   });
+
+  console.log("new token ", process.env.ACCESS_TOKEN);
 }
 
 module.exports = spotifyRouter;
