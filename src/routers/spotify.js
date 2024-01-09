@@ -1,13 +1,11 @@
 const express = require("express");
 const request = require("request");
+const jwt = require("jsonwebtoken");
 const spotifyRouter = new express.Router();
-
-setInterval(() => {
-  updateToken();
-}, 300000);
 
 spotifyRouter.get("/spotify/get-player-state", async (req, res) => {
   console.log("getting player state");
+  console.log("first access token", process.env.ACCESS_TOKEN);
   try {
     const response = await fetch(
       "https://api.spotify.com/v1/me/player/currently-playing",
@@ -49,6 +47,7 @@ spotifyRouter.get("/spotify/get-player-state", async (req, res) => {
 });
 
 spotifyRouter.get("/spotify/recently-played", async (req, res) => {
+  console.log("recently played");
   try {
     const response = await fetch(
       "https://api.spotify.com/v1/me/player/recently-played",
@@ -97,15 +96,29 @@ spotifyRouter.get("/spotify/refresh-token", function (req, res) {
 
   request.post(authOptions, function (error, response, body) {
     if (!error && response.statusCode === 200) {
+      console.log("refresh token route body", body);
       process.env.ACCESS_TOKEN = body.access_token;
-      process.env.REFRESH_TOKEN = body.refresh_token;
+      // process.env.REFRESH_TOKEN = body.refresh_token;
+
+      console.log("token after refresh token route", process.env.ACCESS_TOKEN);
+      setTimeout(refreshToken, body.expires_in * 1000);
 
       res.redirect("/spotify/get-player-state");
     }
   });
 });
 
-function updateToken() {
+function isExpired(req, res, next) {
+  try {
+    console.log(process.env.ACCESS_TOKEN);
+    const decoded = jwt.decode(process.env.ACCESS_TOKEN);
+    console.log(decoded.exp);
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+function refreshToken() {
   console.log("refreshing token");
   const authOptions = {
     url: "https://accounts.spotify.com/api/token",
@@ -127,12 +140,14 @@ function updateToken() {
 
   request.post(authOptions, function (error, response, body) {
     if (!error && response.statusCode === 200) {
+      console.log("refresh token body response ", body);
       process.env.ACCESS_TOKEN = body.access_token;
-      process.env.REFRESH_TOKEN = body.refresh_token;
+      // process.env.REFRESH_TOKEN = body.refresh_token;
     }
-  });
 
-  console.log("new token ", process.env.ACCESS_TOKEN);
+    setTimeout(refreshToken, body.expires_in * 1000);
+    console.log("new access", process.env.ACCESS_TOKEN);
+  });
 }
 
 module.exports = spotifyRouter;
