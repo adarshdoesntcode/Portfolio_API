@@ -2,7 +2,12 @@ const express = require("express");
 const request = require("request");
 const spotifyRouter = new express.Router();
 
+setInterval(() => {
+  updateToken();
+}, 3540000);
+
 spotifyRouter.get("/spotify/get-player-state", async (req, res) => {
+  console.log("getting player state");
   try {
     const response = await fetch(
       "https://api.spotify.com/v1/me/player/currently-playing",
@@ -71,6 +76,7 @@ spotifyRouter.get("/spotify/recently-played", async (req, res) => {
 });
 
 spotifyRouter.get("/spotify/refresh-token", function (req, res) {
+  console.log("refreshing token routee");
   const authOptions = {
     url: "https://accounts.spotify.com/api/token",
     headers: {
@@ -98,5 +104,33 @@ spotifyRouter.get("/spotify/refresh-token", function (req, res) {
     }
   });
 });
+
+function updateToken() {
+  console.log("refreshing token");
+  const authOptions = {
+    url: "https://accounts.spotify.com/api/token",
+    headers: {
+      method: "POST",
+      "content-type": "application/x-www-form-urlencoded",
+      Authorization:
+        "Basic " +
+        new Buffer.from(
+          process.env.CLIENT_ID + ":" + process.env.CLIENT_SECRET_ID
+        ).toString("base64"),
+    },
+    form: {
+      grant_type: "refresh_token",
+      refresh_token: process.env.REFRESH_TOKEN,
+    },
+    json: true,
+  };
+
+  request.post(authOptions, function (error, response, body) {
+    if (!error && response.statusCode === 200) {
+      process.env.ACCESS_TOKEN = body.access_token;
+      process.env.REFRESH_TOKEN = body.refresh_token;
+    }
+  });
+}
 
 module.exports = spotifyRouter;
