@@ -4,7 +4,7 @@ const spotifyRouter = new express.Router();
 
 setInterval(() => {
   updateToken();
-}, 3540000);
+}, 300000);
 
 spotifyRouter.get("/spotify/get-player-state", async (req, res) => {
   console.log("getting player state");
