@@ -1,9 +1,20 @@
 const express = require("express");
+const Redis = require("ioredis");
 
 const stravaRouter = new express.Router();
 
+const client = new Redis(process.env.REDIS_URL);
+let STRAVA_ACCESS_TOKEN;
+let STRAVA_REFRESH_TOKEN;
+
+const tokens = async () => {
+  STRAVA_ACCESS_TOKEN = await client.get("STRAVA_ACCESS_TOKEN");
+  STRAVA_REFRESH_TOKEN = await client.get("STRAVA_REFRESH_TOKEN");
+};
+
+tokens();
+
 stravaRouter.get("/strava/get-activities", async (req, res) => {
-  console.log("getting activities");
   try {
     const response = await fetch(
       "https://www.strava.com/api/v3/athlete/activities",
@@ -36,7 +47,6 @@ stravaRouter.get("/strava/get-activities", async (req, res) => {
 });
 
 stravaRouter.get("/strava/refresh-token", async (req, res) => {
-  console.log("refreshing token");
   try {
     const response = await fetch("https://www.strava.com/api/v3/oauth/token", {
       body: `client_id=${process.env.STRAVA_CLIENT_ID}&client_secret=${process.env.STRAVA_CLIENT_SECRET}&grant_type=refresh_token&refresh_token=${process.env.STRAVA_REFRESH_TOKEN}`,
@@ -46,38 +56,14 @@ stravaRouter.get("/strava/refresh-token", async (req, res) => {
       method: "POST",
     });
     const data = await response.json();
-    console.log(data);
 
-    process.env.STRAVA_REFRESH_TOKEN = data.refresh_token;
-    process.env.STRAVA_ACCESS_TOKEN = data.access_token;
-
-    setTimeout(refreshToken, data.expires_in * 1000);
+    await client.set("STRAVA_ACCESS_TOKEN", data.access_token);
+    await client.set("STRAVA_REFRESH_TOKEN", data.refresh_token);
 
     res.redirect("/strava/get-activities");
   } catch (error) {
     console.log(error);
   }
 });
-
-async function refreshToken() {
-  try {
-    const response = await fetch("https://www.strava.com/api/v3/oauth/token", {
-      body: `client_id=${process.env.STRAVA_CLIENT_ID}&client_secret=${process.env.STRAVA_CLIENT_SECRET}&grant_type=refresh_token&refresh_token=${process.env.STRAVA_REFRESH_TOKEN}`,
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      method: "POST",
-    });
-    const data = await response.json();
-    console.log(data);
-
-    process.env.STRAVA_REFRESH_TOKEN = data.refresh_token;
-    process.env.STRAVA_ACCESS_TOKEN = data.access_token;
-
-    setTimeout(refreshToken, data.expires_in * 1000);
-  } catch (error) {
-    console.log(error);
-  }
-}
 
 module.exports = stravaRouter;
