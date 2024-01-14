@@ -1,5 +1,4 @@
 const express = require("express");
-const request = require("request");
 const client = require("../db/redis");
 
 const spotifyRouter = new express.Router();
@@ -13,71 +12,6 @@ const getTokens = async (req, res, next) => {
   res.locals.SPOTIFY_ACCESS_TOKEN = SPOTIFY_ACCESS_TOKEN;
   next();
 };
-
-spotifyRouter.get("/spotify/get-player-state", getTokens, async (req, res) => {
-  try {
-    const response = await fetch(
-      "https://api.spotify.com/v1/me/player/currently-playing",
-      {
-        method: "GET",
-        headers: {
-          Authorization: "Bearer " + res.locals.SPOTIFY_ACCESS_TOKEN,
-          "Content-Type": "application/json",
-        },
-      }
-    );
-
-    if (response.status === 204) {
-      res.redirect("/spotify/recently-played");
-    }
-
-    if (response.status !== 204) {
-      const data = await response.json();
-      if (data.currently_playing_type === "episode") {
-        res.redirect("/spotify/recently-played");
-      } else {
-        res.status(200).send({
-          trackTitle: data.item.name,
-          artists: data.item.artists.map((artist) => artist.name),
-          trackLink: data.item.external_urls.spotify,
-          isPlaying: true,
-          trackAudio: data.item.preview_url,
-          status: 200,
-        });
-      }
-    }
-  } catch (e) {
-    console.log(e);
-  }
-});
-
-spotifyRouter.get("/spotify/recently-played", getTokens, async (req, res) => {
-  try {
-    const response = await fetch(
-      "https://api.spotify.com/v1/me/player/recently-played",
-      {
-        method: "GET",
-        headers: {
-          Authorization: "Bearer " + res.locals.SPOTIFY_ACCESS_TOKEN,
-          "Content-Type": "application/json",
-        },
-      }
-    );
-    const data = await response.json();
-
-    const recentTrack = data.items[0].track;
-    res.status(200).json({
-      trackTitle: recentTrack.name,
-      artists: recentTrack.artists.map((artist) => artist.name),
-      trackLink: recentTrack.external_urls.spotify,
-      trackAudio: recentTrack.preview_url,
-      isPlaying: false,
-      status: 200,
-    });
-  } catch (error) {
-    console.log(error);
-  }
-});
 
 const refreshToken = async () => {
   let accessToken;
@@ -122,5 +56,83 @@ const refreshToken = async () => {
 
   return accessToken;
 };
+
+const fetchSpotify = async (URL, TOKEN) => {
+  let response;
+  try {
+    response = await fetch(URL, {
+      method: "GET",
+      headers: {
+        Authorization: "Bearer " + TOKEN,
+        "Content-Type": "application/json",
+      },
+    });
+  } catch (error) {
+  } finally {
+    return response;
+  }
+};
+
+spotifyRouter.get("/spotify/get-player-state", getTokens, async (req, res) => {
+  let responseData;
+  let current_response;
+  let recent_response;
+  try {
+    current_response = await fetchSpotify(
+      "https://api.spotify.com/v1/me/player/currently-playing",
+      res.locals.SPOTIFY_ACCESS_TOKEN
+    );
+
+    if (current_response.status === 204) {
+      recent_response = await fetchSpotify(
+        "https://api.spotify.com/v1/me/player/recently-played",
+        res.locals.SPOTIFY_ACCESS_TOKEN
+      );
+      const data = await recent_response.json();
+      const recentTrack = data.items[0].track;
+      responseData = {
+        trackTitle: recentTrack.name,
+        artists: recentTrack.artists.map((artist) => artist.name),
+        trackLink: recentTrack.external_urls.spotify,
+        trackAudio: recentTrack.preview_url,
+        isPlaying: false,
+        status: 200,
+      };
+    }
+
+    if (current_response.status !== 204) {
+      const data = await current_response.json();
+      if (data.currently_playing_type === "episode") {
+        recent_response = await fetchSpotify(
+          "https://api.spotify.com/v1/me/player/recently-played",
+          res.locals.SPOTIFY_ACCESS_TOKEN
+        );
+        const data = await recent_response.json();
+        const recentTrack = data.items[0].track;
+        responseData = {
+          trackTitle: recentTrack.name,
+          artists: recentTrack.artists.map((artist) => artist.name),
+          trackLink: recentTrack.external_urls.spotify,
+          trackAudio: recentTrack.preview_url,
+          isPlaying: false,
+          status: 200,
+        };
+      } else {
+        responseData = {
+          trackTitle: data.item.name,
+          artists: data.item.artists.map((artist) => artist.name),
+          trackLink: data.item.external_urls.spotify,
+          isPlaying: true,
+          trackAudio: data.item.preview_url,
+          status: 200,
+        };
+      }
+    }
+  } catch (e) {
+    console.log(e);
+  } finally {
+    res.status(200).send(responseData);
+  }
+});
 
 module.exports = spotifyRouter;
