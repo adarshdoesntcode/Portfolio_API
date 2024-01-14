@@ -1,10 +1,8 @@
 const express = require("express");
 const request = require("request");
-const Redis = require("ioredis");
+const client = require("../db/redis");
 
 const spotifyRouter = new express.Router();
-
-const client = new Redis(process.env.REDIS_URL);
 
 const getTokens = async (req, res, next) => {
   let SPOTIFY_ACCESS_TOKEN = await client.get("SPOTIFY_ACCESS_TOKEN");

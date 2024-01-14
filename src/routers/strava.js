@@ -1,34 +1,30 @@
 const express = require("express");
-const Redis = require("ioredis");
 
+const client = require("../db/redis");
 const stravaRouter = new express.Router();
 
-const client = new Redis(process.env.REDIS_URL);
-let STRAVA_ACCESS_TOKEN;
-let STRAVA_REFRESH_TOKEN;
+const getTokens = async (req, res, next) => {
+  let STRAVA_ACCESS_TOKEN = await client.get("STRAVA_ACCESS_TOKEN");
 
-const tokens = async () => {
-  STRAVA_ACCESS_TOKEN = await client.get("STRAVA_ACCESS_TOKEN");
-  STRAVA_REFRESH_TOKEN = await client.get("STRAVA_REFRESH_TOKEN");
+  if (!STRAVA_ACCESS_TOKEN) {
+    STRAVA_ACCESS_TOKEN = await refreshToken();
+  }
+  res.locals.STRAVA_ACCESS_TOKEN = STRAVA_ACCESS_TOKEN;
+  res.locals.STRAVA_REFRESH_TOKEN = process.env.STRAVA_REFRESH_TOKEN;
+  next();
 };
 
-tokens();
-
-stravaRouter.get("/strava/get-activities", async (req, res) => {
+stravaRouter.get("/strava/get-activities", getTokens, async (req, res) => {
   try {
     const response = await fetch(
       "https://www.strava.com/api/v3/athlete/activities",
       {
         method: "GET",
         headers: {
-          Authorization: "Bearer " + STRAVA_ACCESS_TOKEN,
+          Authorization: "Bearer " + res.locals.STRAVA_ACCESS_TOKEN,
         },
       }
     );
-
-    if (response.status === 401) {
-      res.redirect("/strava/refresh-token");
-    }
 
     if (response.status !== 401) {
       const data = await response.json();
@@ -46,24 +42,30 @@ stravaRouter.get("/strava/get-activities", async (req, res) => {
   }
 });
 
-stravaRouter.get("/strava/refresh-token", async (req, res) => {
+const refreshToken = async () => {
+  let accessToken;
   try {
     const response = await fetch("https://www.strava.com/api/v3/oauth/token", {
-      body: `client_id=${process.env.STRAVA_CLIENT_ID}&client_secret=${process.env.STRAVA_CLIENT_SECRET}&grant_type=refresh_token&refresh_token=${STRAVA_REFRESH_TOKEN}`,
+      method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
       },
-      method: "POST",
+      body: `client_id=${process.env.STRAVA_CLIENT_ID}&client_secret=${process.env.STRAVA_CLIENT_SECRET}&grant_type=refresh_token&refresh_token=${process.env.STRAVA_REFRESH_TOKEN}`,
     });
     const data = await response.json();
 
-    await client.set("STRAVA_ACCESS_TOKEN", data.access_token);
-    await client.set("STRAVA_REFRESH_TOKEN", data.refresh_token);
-
-    res.redirect("/strava/get-activities");
+    accessToken = data.access_token;
+    await client.set(
+      "STRAVA_ACCESS_TOKEN",
+      data.access_token,
+      "EX",
+      data.expires_in - 5
+    );
+    process.env.STRAVA_REFRESH_TOKEN = data.refresh_token;
   } catch (error) {
     console.log(error);
+  } finally {
+    return accessToken;
   }
-});
-
+};
 module.exports = stravaRouter;
