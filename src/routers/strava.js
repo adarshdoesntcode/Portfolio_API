@@ -13,7 +13,7 @@ const getTokens = async (req, res, next) => {
   next();
 };
 
-stravaRouter.post("/strava/get-activities", getTokens, async (req, res) => {
+stravaRouter.post("/strava/update-activities", getTokens, async (req, res) => {
   try {
     const response = await fetch(
       "https://www.strava.com/api/v3/athlete/activities",
@@ -36,7 +36,7 @@ stravaRouter.post("/strava/get-activities", getTokens, async (req, res) => {
         start_date_local: data[0].start_date_local,
       });
 
-      res.status(200).send("ok");
+      res.status(200).send("EVENT_RECEIVED");
     }
   } catch (e) {
     console.log(e);
@@ -80,28 +80,7 @@ const refreshToken = async () => {
 };
 
 stravaRouter.post("/strava_webhook", (req, res) => {
-  console.log("webhook event received!", req.query, req.body);
-  res.status(200).send("EVENT_RECEIVED");
+  res.redirect("/strava/update-activities");
 });
 
-stravaRouter.get("/strava_webhook", (req, res) => {
-  // Your verify token. Should be a random string.
-  const VERIFY_TOKEN = "STRAVA";
-  // Parses the query params
-  let mode = req.query["hub.mode"];
-  let token = req.query["hub.verify_token"];
-  let challenge = req.query["hub.challenge"];
-  // Checks if a token and mode is in the query string of the request
-  if (mode && token) {
-    // Verifies that the mode and token sent are valid
-    if (mode === "subscribe" && token === VERIFY_TOKEN) {
-      // Responds with the challenge token from the request
-      console.log("WEBHOOK_VERIFIED");
-      res.json({ "hub.challenge": challenge });
-    } else {
-      // Responds with '403 Forbidden' if verify tokens do not match
-      res.sendStatus(403);
-    }
-  }
-});
 module.exports = stravaRouter;
