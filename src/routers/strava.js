@@ -10,7 +10,6 @@ const getTokens = async (req, res, next) => {
     STRAVA_ACCESS_TOKEN = await refreshToken();
   }
   res.locals.STRAVA_ACCESS_TOKEN = STRAVA_ACCESS_TOKEN;
-  res.locals.STRAVA_REFRESH_TOKEN = process.env.STRAVA_REFRESH_TOKEN;
   next();
 };
 
@@ -29,7 +28,7 @@ stravaRouter.post("/strava/get-activities", getTokens, async (req, res) => {
     if (response.status !== 401) {
       const data = await response.json();
 
-      await client.hset("STRAVA_DATA", {
+      client.hset("STRAVA_DATA", {
         distance: data[0].distance,
         moving_time: data[0].moving_time,
         type: data[0].type,
@@ -37,13 +36,7 @@ stravaRouter.post("/strava/get-activities", getTokens, async (req, res) => {
         start_date_local: data[0].start_date_local,
       });
 
-      res.status(200).json({
-        distance: data[0].distance,
-        moving_time: data[0].moving_time,
-        type: data[0].type,
-        average_speed: data[0].average_speed,
-        start_date_local: data[0].start_date_local,
-      });
+      res.status(200).send("ok");
     }
   } catch (e) {
     console.log(e);
@@ -85,4 +78,30 @@ const refreshToken = async () => {
     return accessToken;
   }
 };
+
+stravaRouter.post("/strava_webhook", (req, res) => {
+  console.log("webhook event received!", req.query, req.body);
+  res.status(200).send("EVENT_RECEIVED");
+});
+
+stravaRouter.get("/strava_webhook", (req, res) => {
+  // Your verify token. Should be a random string.
+  const VERIFY_TOKEN = "STRAVA";
+  // Parses the query params
+  let mode = req.query["hub.mode"];
+  let token = req.query["hub.verify_token"];
+  let challenge = req.query["hub.challenge"];
+  // Checks if a token and mode is in the query string of the request
+  if (mode && token) {
+    // Verifies that the mode and token sent are valid
+    if (mode === "subscribe" && token === VERIFY_TOKEN) {
+      // Responds with the challenge token from the request
+      console.log("WEBHOOK_VERIFIED");
+      res.json({ "hub.challenge": challenge });
+    } else {
+      // Responds with '403 Forbidden' if verify tokens do not match
+      res.sendStatus(403);
+    }
+  }
+});
 module.exports = stravaRouter;
