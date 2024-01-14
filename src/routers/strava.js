@@ -21,7 +21,7 @@ stravaRouter.get("/strava/get-activities", async (req, res) => {
       {
         method: "GET",
         headers: {
-          Authorization: "Bearer " + process.env.STRAVA_ACCESS_TOKEN,
+          Authorization: "Bearer " + STRAVA_ACCESS_TOKEN,
         },
       }
     );
@@ -49,7 +49,7 @@ stravaRouter.get("/strava/get-activities", async (req, res) => {
 stravaRouter.get("/strava/refresh-token", async (req, res) => {
   try {
     const response = await fetch("https://www.strava.com/api/v3/oauth/token", {
-      body: `client_id=${process.env.STRAVA_CLIENT_ID}&client_secret=${process.env.STRAVA_CLIENT_SECRET}&grant_type=refresh_token&refresh_token=${process.env.STRAVA_REFRESH_TOKEN}`,
+      body: `client_id=${process.env.STRAVA_CLIENT_ID}&client_secret=${process.env.STRAVA_CLIENT_SECRET}&grant_type=refresh_token&refresh_token=${STRAVA_REFRESH_TOKEN}`,
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
       },
