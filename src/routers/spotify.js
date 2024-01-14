@@ -126,6 +126,4 @@ const refreshToken = async () => {
   return accessToken;
 };
 
-refreshToken();
-
 module.exports = spotifyRouter;
