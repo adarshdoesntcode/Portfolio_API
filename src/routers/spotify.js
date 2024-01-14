@@ -28,7 +28,6 @@ spotifyRouter.get("/spotify/get-player-state", getTokens, async (req, res) => {
     );
 
     if (response.status === 204) {
-      console.log("204");
       res.redirect("/spotify/recently-played");
     }
 

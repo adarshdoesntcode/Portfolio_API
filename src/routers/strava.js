@@ -13,14 +13,14 @@ const getTokens = async (req, res, next) => {
   next();
 };
 
-stravaRouter.post("/strava/update-activities", getTokens, async (req, res) => {
+const updateActivities = async (token) => {
   try {
     const response = await fetch(
       "https://www.strava.com/api/v3/athlete/activities",
       {
         method: "GET",
         headers: {
-          Authorization: "Bearer " + res.locals.STRAVA_ACCESS_TOKEN,
+          Authorization: "Bearer " + token,
         },
       }
     );
@@ -35,22 +35,11 @@ stravaRouter.post("/strava/update-activities", getTokens, async (req, res) => {
         average_speed: data[0].average_speed,
         start_date_local: data[0].start_date_local,
       });
-
-      res.status(200).send("EVENT_RECEIVED");
     }
   } catch (e) {
     console.log(e);
   }
-});
-
-stravaRouter.get("/strava/get-activities", async (req, res) => {
-  try {
-    const data = await client.hgetall("STRAVA_DATA");
-    res.status(200).json(data);
-  } catch (error) {
-    console.log(error);
-  }
-});
+};
 
 const refreshToken = async () => {
   let accessToken;
@@ -79,8 +68,18 @@ const refreshToken = async () => {
   }
 };
 
-stravaRouter.post("/strava_webhook", (req, res) => {
-  res.redirect("/strava/update-activities");
+stravaRouter.get("/strava/get-activities", async (req, res) => {
+  try {
+    const data = await client.hgetall("STRAVA_DATA");
+    res.status(200).json(data);
+  } catch (error) {
+    console.log(error);
+  }
+});
+
+stravaRouter.post("/strava_webhook", getTokens, (req, res) => {
+  updateActivities(res.locals.STRAVA_ACCESS_TOKEN);
+  res.status(200).send("EVENT_RECEIVED");
 });
 
 module.exports = stravaRouter;
