@@ -63,7 +63,6 @@ const refreshToken = async () => {
     process.env.STRAVA_REFRESH_TOKEN = data.refresh_token;
   } catch (error) {
     console.log(error);
-  } finally {
     return accessToken;
   }
 };

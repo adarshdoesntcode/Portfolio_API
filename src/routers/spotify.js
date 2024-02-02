@@ -68,6 +68,7 @@ const fetchSpotify = async (URL, TOKEN) => {
       },
     });
   } catch (error) {
+    console.log(error);
   } finally {
     return response;
   }
@@ -90,11 +91,13 @@ spotifyRouter.get("/spotify/get-player-state", getTokens, async (req, res) => {
       );
       const data = await recent_response.json();
       const recentTrack = data.items[0].track;
+
       responseData = {
         trackTitle: recentTrack.name,
         artists: recentTrack.artists.map((artist) => artist.name),
         trackLink: recentTrack.external_urls.spotify,
         trackAudio: recentTrack.preview_url,
+        trackImage: recentTrack.album.images[0],
         isPlaying: false,
         status: 200,
       };
@@ -102,6 +105,7 @@ spotifyRouter.get("/spotify/get-player-state", getTokens, async (req, res) => {
 
     if (current_response.status !== 204) {
       const data = await current_response.json();
+
       if (data.currently_playing_type === "episode") {
         recent_response = await fetchSpotify(
           "https://api.spotify.com/v1/me/player/recently-played",
@@ -114,6 +118,8 @@ spotifyRouter.get("/spotify/get-player-state", getTokens, async (req, res) => {
           artists: recentTrack.artists.map((artist) => artist.name),
           trackLink: recentTrack.external_urls.spotify,
           trackAudio: recentTrack.preview_url,
+          trackImage: recentTrack.album.images,
+
           isPlaying: false,
           status: 200,
         };
@@ -124,6 +130,7 @@ spotifyRouter.get("/spotify/get-player-state", getTokens, async (req, res) => {
           trackLink: data.item.external_urls.spotify,
           isPlaying: true,
           trackAudio: data.item.preview_url,
+          trackImage: data.item.album.images[0],
           status: 200,
         };
       }
