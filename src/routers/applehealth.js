@@ -9,8 +9,6 @@ const healthRouter = new express.Router();
 
 healthRouter.get("/health/steps", (req, res) => {
   const oauth2Client = new google.auth.OAuth2(
-    "116157278106-vbbf6aqqmqct64gaep57v2lschdlsbec.apps.googleusercontent.com",
-    "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",
     "https://adarshportfolio.cyclic.app/steps"
   );
 
@@ -36,8 +34,6 @@ healthRouter.get("/steps", async (req, res) => {
   const queryURL = new urlParser(req.url);
   const code = queryParser.parse(queryURL.query).code;
   const oauth2Client = new google.auth.OAuth2(
-    "116157278106-vbbf6aqqmqct64gaep57v2lschdlsbec.apps.googleusercontent.com",
-    "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",
     "https://adarshportfolio.cyclic.app/steps"
   );
 

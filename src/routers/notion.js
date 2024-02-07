@@ -23,8 +23,6 @@ notionRouter.get("/notion/currently-reading", async (req, res) => {
       ],
     });
 
-    console.log(response);
-
     if (response.results.length === 0) {
       res.status(404).json({
         status: "Not Found",
